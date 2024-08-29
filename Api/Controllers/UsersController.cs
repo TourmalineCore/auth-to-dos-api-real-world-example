@@ -20,8 +20,8 @@ namespace Api.Controllers
             _usersService = usersService;
         }
 
-        //[Authorize]
-        //[RequiresPermission(UserClaimsProvider.CanManageAccounts)]
+        [Authorize]
+        [RequiresPermission(UserClaimsProvider.CanManageAccounts)]
         [HttpPost("register")]
         public async Task<ActionResult> RegisterUserAsync([FromBody] RegistrationModel registrationModel)
         {
