@@ -16,7 +16,7 @@ namespace Api.Services.Users
 
         private const string NameIdentifierClaimType = "nameIdentifier";
 
-        private const string CorporateEmailClaimType = "corporateEmail";
+        private const string LoginClaimType = "login";
 
         public UserClaimsProvider(
             IFindUserQuery userQuery,
@@ -37,7 +37,7 @@ namespace Api.Services.Users
             var claims = new List<Claim>
             {
                 new (NameIdentifierClaimType, login),
-                new (CorporateEmailClaimType, user.UserName),
+                new (LoginClaimType, user.UserName),
                 new (TenantIdClaimType, tenantId.ToString())
 
             };
