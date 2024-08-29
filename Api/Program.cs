@@ -45,11 +45,7 @@ builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
 
     config.AddEnvironmentVariables();
 
-    if (args != null)
-    {
-        config.AddCommandLine(args);
-    }
-
+    if (args != null) config.AddCommandLine(args);
 });
 
 builder.Host.ConfigureLogging((hostingContext, logging) =>
@@ -59,10 +55,8 @@ builder.Host.ConfigureLogging((hostingContext, logging) =>
     // IMPORTANT: This needs to be added *before* configuration is loaded, this lets
     // the defaults be overridden by the configuration.
     if (isWindows)
-    {
         // Default the EventLogLoggerProvider to warning or above
         logging.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.Warning);
-    }
 
     logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
     logging.AddConsole();
@@ -70,19 +64,16 @@ builder.Host.ConfigureLogging((hostingContext, logging) =>
     logging.AddEventSourceLogger();
 
     if (isWindows)
-    {
         // Add the EventLogLoggerProvider on windows machines
         logging.AddEventLog();
-    }
 
     logging.Configure(options =>
-    {
-        options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
-                                          | ActivityTrackingOptions.TraceId
-                                          | ActivityTrackingOptions.ParentId;
-    }
-        );
-
+        {
+            options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
+                                              | ActivityTrackingOptions.TraceId
+                                              | ActivityTrackingOptions.ParentId;
+        }
+    );
 });
 
 builder
@@ -125,15 +116,10 @@ builder.Services.AddTransient<UserBlockCommand>();
 builder.Services.AddTransient<UserUnblockCommand>();
 
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Debug")
-{
     builder.Services.AddTransient<IExternalServicesHttpClient, ExternalServicesHttpClient>();
-
-}
 else
-{
-    // toDo: change FakeExternalServicesHttpClient to ExternalServicesHttpClient
+// toDo: change FakeExternalServicesHttpClient to ExternalServicesHttpClient
     builder.Services.AddTransient<IExternalServicesHttpClient, ExternalServicesHttpClient>();
-}
 
 
 var app = builder.Build();
@@ -158,7 +144,6 @@ using var serviceScope = app.Services.CreateScope();
 app
     .OnLoginExecuting(serviceScope.ServiceProvider.GetRequiredService<AuthCallbacks>().OnLoginExecuting)
     .OnLoginExecuted(serviceScope.ServiceProvider.GetRequiredService<AuthCallbacks>().OnLoginExecuted)
-    
     .UseDefaultLoginMiddleware(new LoginEndpointOptions
         {
             LoginEndpointRoute = "/api/auth/login"

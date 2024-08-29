@@ -3,51 +3,50 @@ using DataAccess.Queries;
 using Microsoft.AspNetCore.Identity;
 using TourmalineCore.AspNetCore.JwtAuthentication.Core.Contract;
 
-namespace Api.Services.Users
+namespace Api.Services.Users;
+
+public class UserCredentialsValidator : IUserCredentialsValidator
 {
-    public class UserCredentialsValidator : IUserCredentialsValidator
+    private readonly ILogger<UserCredentialsValidator> _logger;
+    private readonly UserManager<User> _userManager;
+    private readonly IFindUserQuery _userQuery;
+
+    public UserCredentialsValidator(
+        ILogger<UserCredentialsValidator> logger,
+        IFindUserQuery userQuery,
+        UserManager<User> userManager)
     {
-        private readonly ILogger<UserCredentialsValidator> _logger;
-        private readonly IFindUserQuery _userQuery;
-        private readonly UserManager<User> _userManager;
+        _logger = logger;
+        _userQuery = userQuery;
+        _userManager = userManager;
+    }
 
-        public UserCredentialsValidator(
-            ILogger<UserCredentialsValidator> logger,
-            IFindUserQuery userQuery,
-            UserManager<User> userManager)
+    public async Task<bool> ValidateUserCredentials(string username, string password)
+    {
+        var user = await _userQuery.FindUserByLoginAsync(username);
+
+        if (user == null)
         {
-            _logger = logger;
-            _userQuery = userQuery;
-            _userManager = userManager;
-        }
-
-        public async Task<bool> ValidateUserCredentials(string username, string password)
-        {
-            var user = await _userQuery.FindUserByLoginAsync(username);
-
-            if(user == null)
-            {
-                _logger.LogWarning(
-                    $"[{nameof(UserCredentialsValidator)}]: User with credentials [{username}] not found.");
-                return false;
-            }
-
-            var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
-
-            if(!isValidPassword)
-            {
-                _logger.LogWarning(
-                    $"[{nameof(UserCredentialsValidator)}]: The password [{password}] is invalid for a user [{username}]");
-                return false;
-            }
-
-            if(!user.IsBlocked)
-                return true;
-
             _logger.LogWarning(
-                $"[{nameof(UserCredentialsValidator)}]: User with credentials [{username}] was blocked.");
-
+                $"[{nameof(UserCredentialsValidator)}]: User with credentials [{username}] not found.");
             return false;
         }
+
+        var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
+
+        if (!isValidPassword)
+        {
+            _logger.LogWarning(
+                $"[{nameof(UserCredentialsValidator)}]: The password [{password}] is invalid for a user [{username}]");
+            return false;
+        }
+
+        if (!user.IsBlocked)
+            return true;
+
+        _logger.LogWarning(
+            $"[{nameof(UserCredentialsValidator)}]: User with credentials [{username}] was blocked.");
+
+        return false;
     }
 }

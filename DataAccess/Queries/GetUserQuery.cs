@@ -1,4 +1,3 @@
-using DataAccess;
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,10 +18,7 @@ public class GetUserQuery
             .Users
             .SingleOrDefaultAsync(x => x.AccountId == accountId);
 
-        if(user == null)
-        {
-            throw new NullReferenceException("User not found");
-        }
+        if (user == null) throw new NullReferenceException("User not found");
 
         return user;
     }

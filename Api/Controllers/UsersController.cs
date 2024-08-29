@@ -5,55 +5,53 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TourmalineCore.AspNetCore.JwtAuthentication.Core.Filters;
 
-namespace Api.Controllers
+namespace Api.Controllers;
+
+[Route("api/auth")]
+public class UsersController : Controller
 {
-    [Route("api/auth")]
-    public class UsersController : Controller
+    private const int CreatedStatusCode = (int)HttpStatusCode.Created;
+    private const int InternalServerErrorCode = (int)HttpStatusCode.InternalServerError;
+    private readonly UsersService _usersService;
+
+    public UsersController(UsersService usersService)
     {
-        private readonly UsersService _usersService;
+        _usersService = usersService;
+    }
 
-        private const int CreatedStatusCode = (int)HttpStatusCode.Created;
-        private const int InternalServerErrorCode = (int)HttpStatusCode.InternalServerError;
-
-        public UsersController(UsersService usersService)
+    [Authorize]
+    [RequiresPermission(UserClaimsProvider.CanManageAccounts)]
+    [HttpPost("register")]
+    public async Task<ActionResult> RegisterUserAsync([FromBody] RegistrationModel registrationModel)
+    {
+        try
         {
-            _usersService = usersService;
+            await _usersService.RegisterAsync(registrationModel);
+            return StatusCode(CreatedStatusCode);
         }
-
-        [Authorize]
-        [RequiresPermission(UserClaimsProvider.CanManageAccounts)]
-        [HttpPost("register")]
-        public async Task<ActionResult> RegisterUserAsync([FromBody] RegistrationModel registrationModel)
+        catch (Exception ex)
         {
-            try
-            {
-                await _usersService.RegisterAsync(registrationModel);
-                return StatusCode(CreatedStatusCode);
-            }
-            catch(Exception ex)
-            {
-                return Problem(ex.Message, null, InternalServerErrorCode);
-            }
+            return Problem(ex.Message, null, InternalServerErrorCode);
         }
+    }
 
-        [HttpPost("reset")]
-        public Task RegisterUser([FromQuery] string corporateEmail)
+    [HttpPost("reset")]
+    public Task RegisterUser([FromQuery] string corporateEmail)
+    {
+        return _usersService.ResetPasswordAsync(corporateEmail);
+    }
+
+    [HttpPut("change-password")]
+    public async Task<ActionResult> ChangePasswordAsync([FromBody] PasswordChangeModel passwordChangeModel)
+    {
+        try
         {
-            return _usersService.ResetPasswordAsync(corporateEmail);
+            await _usersService.ChangePasswordAsync(passwordChangeModel);
+            return Ok();
         }
-
-        [HttpPut("change-password")]
-        public async Task<ActionResult> ChangePasswordAsync([FromBody] PasswordChangeModel passwordChangeModel)
+        catch (Exception ex)
         {
-            try
-            {
-                await _usersService.ChangePasswordAsync(passwordChangeModel);
-                return Ok();
-            }
-            catch(Exception ex)
-            {
-                return Problem(ex.Message, null, InternalServerErrorCode);
-            }
+            return Problem(ex.Message, null, InternalServerErrorCode);
         }
     }
 }

@@ -9,6 +9,7 @@ internal class AuthCallbacks
         //Make something
         return Task.CompletedTask;
     }
+
     public Task OnLoginExecuted(LoginModel data)
     {
         //Make something

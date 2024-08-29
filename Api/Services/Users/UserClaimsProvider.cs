@@ -2,48 +2,45 @@ using System.Security.Claims;
 using DataAccess.Queries;
 using TourmalineCore.AspNetCore.JwtAuthentication.Core.Contract;
 
-namespace Api.Services.Users
+namespace Api.Services.Users;
+
+public class UserClaimsProvider : IUserClaimsProvider
 {
-    public class UserClaimsProvider : IUserClaimsProvider
+    public const string PermissionsClaimType = "permissions";
+
+    public const string TenantIdClaimType = "tenantId";
+
+    private const string NameIdentifierClaimType = "nameIdentifier";
+
+    private const string LoginClaimType = "login";
+    private readonly IExternalServicesHttpClient _externalServicesHttpClient;
+    private readonly ILogger<UserClaimsProvider> _logger;
+    private readonly IFindUserQuery _userQuery;
+
+    public UserClaimsProvider(
+        IFindUserQuery userQuery,
+        ILogger<UserClaimsProvider> logger,
+        IExternalServicesHttpClient externalServicesHttpClient)
     {
-        private readonly IFindUserQuery _userQuery;
-        private readonly ILogger<UserClaimsProvider> _logger;
-        private readonly IExternalServicesHttpClient _externalServicesHttpClient;
+        _userQuery = userQuery;
+        _logger = logger;
+        _externalServicesHttpClient = externalServicesHttpClient;
+    }
 
-        public const string PermissionsClaimType = "permissions";
+    public async Task<List<Claim>> GetUserClaimsAsync(string login)
+    {
+        var user = await _userQuery.FindUserByLoginAsync(login);
+        var privileges = await _externalServicesHttpClient.GetPermissions(user.AccountId);
+        var tenantId = await _externalServicesHttpClient.GetTenantId(user.AccountId);
 
-        public const string TenantIdClaimType = "tenantId";
-
-        private const string NameIdentifierClaimType = "nameIdentifier";
-
-        private const string LoginClaimType = "login";
-
-        public UserClaimsProvider(
-            IFindUserQuery userQuery,
-            ILogger<UserClaimsProvider> logger,
-            IExternalServicesHttpClient externalServicesHttpClient)
+        var claims = new List<Claim>
         {
-            _userQuery = userQuery;
-            _logger = logger;
-            _externalServicesHttpClient = externalServicesHttpClient;
-        }
+            new(NameIdentifierClaimType, login),
+            new(LoginClaimType, user.UserName),
+            new(TenantIdClaimType, tenantId.ToString())
+        };
+        privileges.ForEach(x => claims.Add(new Claim(PermissionsClaimType, x.ToString())));
 
-        public async Task<List<Claim>> GetUserClaimsAsync(string login)
-        {
-            var user = await _userQuery.FindUserByLoginAsync(login);
-            var privileges = await _externalServicesHttpClient.GetPermissions(user.AccountId);
-            var tenantId = await _externalServicesHttpClient.GetTenantId(user.AccountId);
-
-            var claims = new List<Claim>
-            {
-                new (NameIdentifierClaimType, login),
-                new (LoginClaimType, user.UserName),
-                new (TenantIdClaimType, tenantId.ToString())
-
-            };
-            privileges.ForEach(x => claims.Add(new Claim(PermissionsClaimType, x.ToString())));
-
-            return claims;
-        }
+        return claims;
     }
 }
