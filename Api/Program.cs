@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Api.Options;
 using Api.Services;
 using Api.Services.Callbacks;
 using Api.Services.Options;
@@ -8,19 +9,55 @@ using DataAccess;
 using DataAccess.Commands;
 using DataAccess.Models;
 using DataAccess.Queries;
+using LoggingLibrary;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using TourmalineCore.AspNetCore.JwtAuthentication.Core;
 using TourmalineCore.AspNetCore.JwtAuthentication.Core.Options;
 using TourmalineCore.AspNetCore.JwtAuthentication.Identity;
 using TourmalineCore.AspNetCore.JwtAuthentication.Identity.Options;
+using AuthenticationOptions = TourmalineCore.AspNetCore.JwtAuthentication.Core.Options.AuthenticationOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 const string defaultConnection = "DefaultConnection";
+// configure ElasticSearch credentials
+builder.Services.Configure<ElasticSearchOptions>(configuration.GetSection("ElasticSearchOptions"));
+var elasticSearchOptions = configuration
+    .GetSection(nameof(ElasticSearchOptions))
+    .Get<ElasticSearchOptions>();
+
+// add logging
+builder.Services.AddScoped(_ => new LoggingAttribute("Api"));
+ElkLogger.SetupLogger(
+    elasticSearchOptions.ElasticSearchUrl,
+    elasticSearchOptions.ElasticSearchLogin,
+    elasticSearchOptions.ElasticSearchPassword);
 
 builder.Services.AddControllers();
+// add tracing
+builder.Services.AddOpenTelemetry()
+    .WithTracing(builder =>
+    {
+        builder
+            .AddSource("Logs.Startup")
+            .SetSampler(new AlwaysOnSampler())
+            .SetResourceBuilder(
+                ResourceBuilder
+                    .CreateDefault()
+                    .AddService("OpenTelemetry.RampUp.Auth.*", serviceVersion: "0.0.1"))
+            .AddAspNetCoreInstrumentation()
+            .AddJaegerExporter(o =>
+            {
+                o.AgentHost = Environment.GetEnvironmentVariable("JAEGER_HOST") ?? "localhost";
+                o.AgentPort = int.TryParse(Environment.GetEnvironmentVariable("JAEGER_PORT"), out var port) ? port : 6831;
+            })
+
+            .AddConsoleExporter();
+    });
 builder.Services.AddCors();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -118,7 +155,7 @@ builder.Services.AddTransient<UserUnblockCommand>();
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Debug")
     builder.Services.AddTransient<IExternalServicesHttpClient, ExternalServicesHttpClient>();
 else
-// toDo: change FakeExternalServicesHttpClient to ExternalServicesHttpClient
+    // toDo: change FakeExternalServicesHttpClient to ExternalServicesHttpClient
     builder.Services.AddTransient<IExternalServicesHttpClient, ExternalServicesHttpClient>();
 
 
@@ -132,12 +169,8 @@ app.UseCors(
         .AllowAnyOrigin()
 );
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsEnvironment("Debug"))
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 using var serviceScope = app.Services.CreateScope();
 
@@ -145,19 +178,19 @@ app
     .OnLoginExecuting(serviceScope.ServiceProvider.GetRequiredService<AuthCallbacks>().OnLoginExecuting)
     .OnLoginExecuted(serviceScope.ServiceProvider.GetRequiredService<AuthCallbacks>().OnLoginExecuted)
     .UseDefaultLoginMiddleware(new LoginEndpointOptions
-        {
-            LoginEndpointRoute = "/api/auth/login"
-        }
+    {
+        LoginEndpointRoute = "/api/auth/login"
+    }
     )
     .UseRefreshTokenMiddleware(new RefreshEndpointOptions
-        {
-            RefreshEndpointRoute = "/api/auth/refresh"
-        }
+    {
+        RefreshEndpointRoute = "/api/auth/refresh"
+    }
     )
     .UseRefreshTokenLogoutMiddleware(new LogoutEndpointOptions
-        {
-            LogoutEndpointRoute = "/api/auth/logout"
-        }
+    {
+        LogoutEndpointRoute = "/api/auth/logout"
+    }
     );
 
 var context = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>();

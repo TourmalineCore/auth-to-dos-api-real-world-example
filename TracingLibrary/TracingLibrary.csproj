@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>net8.0</TargetFramework>
+	  <PackageId>TracingLibrary</PackageId>
+	  <Version>0.0.1</Version>
+	  <Authors>TourmalineCore</Authors>
+	  <Company>TourmalineCore</Company>
+	  <Description>Library for tracing projects to Jaeger.</Description>
+	  <PackageTags>Tracing</PackageTags>
+  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="DotNetEnv" Version="3.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.7" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Geneva" Version="1.9.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+	</ItemGroup>
+</Project>
