@@ -1,39 +1,123 @@
-version: "3.8"
-
 services:
-  db-debug:
+  auth-db:
     image: postgres:14.2-alpine
     restart: always
-    container_name: 'db-debug'
+    container_name: auth-db
+    profiles: ['LocalEnvForDevelopment']
     environment:
+      POSTGRES_DB: auth-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auth-db-debug
     ports:
-      - 6001:5432
+      - 5003:5432
     networks:
-      - authservice-deb
+      - auth-network
 
-  auth-service-api:
-    container_name: 'auth-service-api'
+  auth-api:
+    container_name: auth-api
+    profiles: ['LocalEnvForDevelopment']
     depends_on:
-      - 'db-debug'
+      - auth-db
     build:
       dockerfile: Dockerfile
       context: .
     ports:
-      - 5002:8080
+      - 10003:8080
     environment:
       - ASPNETCORE_ENVIRONMENT=LocalEnvForDevelopment
       - LOGS_PATH=/var/log/dev-auth-api
-      - ConnectionStrings__DefaultConnection=User ID=postgres;Password=postgres;Host=db-debug;port=5432;Database=auth-db-debug
+      - ConnectionStrings__DefaultConnection=User ID=postgres;Password=postgres;Host=auth-db;port=5432;Database=auth-db
+      - ExternalServicesUrls__AccountsServiceUrl=http://accounts-api:8080
       - AuthenticationOptions__PublicSigningKey=MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAz+luHwhsNo4aQxYNCkaxcqL/HUcqWG1zz3pCpbyW5nbgxoo+Xw0jwAqVeRlrWHZf0WszbPObyCpmGVifyj6n0PSp5Np7431zjUhRUkxwyNSyVE5BWw5aJLyLB5EF9HH39CqtxdtWmYuLzhBS5fZT4tyR4xlQffNTxylg7xZgLfunUDRuLxdqR0JO3sjebgogrDVvHj3sif46uitipeTfUyCtqBG/JngPkMbDMNRkTH6QXnXfLgpX5Lr21O4PZPIBwCXzPCTCDMgbXHLvAzdlqgVYJcLf9xXPtVkPGOv8y+hbSTAyCNLViOLKKm2a2W4bPiElDIDwbtbHesj8zHPlpP5Q7QMtT168UxetgUeKsr5kfpxtLpE/QO4GkkqTA6rV7PQKrCTY0B5V8ZD8Ir/hlOKk8jxGe9NLui+8rLnnwJUZErT7Swp9yQL1eed2YtdrcR3q5eOE8+2pkzwjbEoFuIQidDKOghrZOwf6j217fme/xE+aEP0OPv5z07kJr2torh7tUefrVerT4Krj5LVl4DgdlkHAuILWOaYdSoLnRrsrfFa9Y1alM2D/juH9+YtaR/YjNWOhdZNMNyoDT08SbgE81ZbKmVgLGaWFLcMn/LBD6DBeRb5dRx12QZnv0jGJLVVgjTe9EqrjVF92ahGRljDIGjNzEI2f2syc0/qKS4sCAwEAAQ==
       - AuthenticationOptions__PrivateSigningKey=MIIJKAIBAAKCAgEAz+luHwhsNo4aQxYNCkaxcqL/HUcqWG1zz3pCpbyW5nbgxoo+Xw0jwAqVeRlrWHZf0WszbPObyCpmGVifyj6n0PSp5Np7431zjUhRUkxwyNSyVE5BWw5aJLyLB5EF9HH39CqtxdtWmYuLzhBS5fZT4tyR4xlQffNTxylg7xZgLfunUDRuLxdqR0JO3sjebgogrDVvHj3sif46uitipeTfUyCtqBG/JngPkMbDMNRkTH6QXnXfLgpX5Lr21O4PZPIBwCXzPCTCDMgbXHLvAzdlqgVYJcLf9xXPtVkPGOv8y+hbSTAyCNLViOLKKm2a2W4bPiElDIDwbtbHesj8zHPlpP5Q7QMtT168UxetgUeKsr5kfpxtLpE/QO4GkkqTA6rV7PQKrCTY0B5V8ZD8Ir/hlOKk8jxGe9NLui+8rLnnwJUZErT7Swp9yQL1eed2YtdrcR3q5eOE8+2pkzwjbEoFuIQidDKOghrZOwf6j217fme/xE+aEP0OPv5z07kJr2torh7tUefrVerT4Krj5LVl4DgdlkHAuILWOaYdSoLnRrsrfFa9Y1alM2D/juH9+YtaR/YjNWOhdZNMNyoDT08SbgE81ZbKmVgLGaWFLcMn/LBD6DBeRb5dRx12QZnv0jGJLVVgjTe9EqrjVF92ahGRljDIGjNzEI2f2syc0/qKS4sCAwEAAQKCAgBjz6ZkE4EPt6x35FAiTMnHROTAQ3fat8DPK9xvAFhZD1zdM2S58O7mtK4JUuCruThKqvInLdPthh05scgUKXwa3jnpedHb5k/g1YTkw3mpkCKEQoUxl3RDCpib6002irgEabC+uYubbtiQ9lk1uMmQsV7/7RktPfFMPVshrFZD/PnXkTQMO2t0Bisi3L+biBUjVwufMw8pN/ktgsJ67aMgnyF++/YOG7ktQZ5XBL+Z0XCxSFj6G1ESp4bztc2CIoQgoJdimirmQ/KOsUZ4/tE5jBNDHYizb68lWjnbNv9HTKb2PcLnZX/JlUaEk9Ww6CD/9J16oTPLoiRll7N023a0nojzxyjdXW26pm3TSIBfr1OO5YVlZO0RM0PtdLYkmE5UF+QN1cwnDHv+85kjghh1WRW4NGAXHhij/IykPWltDWqXSKdhcSyhOaHr9lZpM3YcjdxsQtLtuLovzEae7ipI46DZrxzUvQLymlzDb4DhrE8SgCYhrN5AZS+aiD6RZegA+ALqKedA05nDbtUIDi0zNbfQ+aEj1fiVg4xQX1sHqup35Ose3UGbRlnfL5+e98XCs7U5QnKsHxLqnHBPEEWWIkT4YDlTOLBWe1kZU9Il2escdAUXT6qxh6NFHW17Zu4yCPUnYocOfrX5mmK7OI8QJzEdoy8KeOWfw2cx05KVMQKCAQEA+YiTos8RjPtyNzmrhhlDCnYqpPDjeSPbH3LpHzLuVEwxbY6n4Nr8mUR+JGXYtSSCF8MRbtg+uPudcnM6VkCY/BsdNOwynYlUgY7E6VqDXjZ8figXwj2lgZkOeau2qpTmZiCRTMVepHFbRei/6ZX50KuoBfKFfuf+QxEcWtexiPI6wHuYRjop/xXFlwatSUMiWjo1PixzFZfFcfUW1pgBTXUfUAYhNDNvawbBUa3KUy97oRvUnNb+HlLaOI0S7GMBwkV0aPXuPSlPcX6ANfS2PujCWUTIz/8OwxDMKUQQezMcRZHmEeO9hOcSSYyq0ysF7OCpQHFoxNI+D2Or+Gi8zQKCAQEA1Uy7eQifLpGzW7RxikdFGdvStokDCDQ2wduiEaZoP5Wwu/EoAO2YNq+eW3NCanXMsIbVR6ztwE49eOJECqfE8LF/+nrXlkoNDVQcDRwvluU/UfLs3FV56HHD7hPUHPcibZqJzMkGnFeSL/yTQH0c+5QH2rp9IZ5K/Snbzkdk+Vkmq9vT26WpAlNXsSDf+XpdHNvSht+npSgZIraQXsVT7cSpShBj/zEjgOPpVKGhBo8vp3zdlNkG4NO5i5TmPp4e5hIpI6mD6wZhMTbTdilA2BmHlifD8WUYGJynFc+AxviZeVT0xofoT/vVHVjudZDaUwc3gEF7t0rAOThlzyiptwKCAQBKkf8Uu27SQ95ZFJnmpCv9t1x9GCPSct2r40o5cZ35gR+QTv5qWub74pUTyX/eej+KXFgcWPE9lKvzpO29EublCDFNPHzPyVeAtCqyVcNGZ2ACz3ZyLLwGI7hIsgEPrxm/UWI6oAztdZbCKJEZfCFAs9utk1FDoI7Ceh2QJD9A3qqiFQ1nh0A/o8D9phgo+bANaLG6l8v4mvd9W7HshVZ2UFcAMiTAFdLpGAazow0AmQMIHWoHSNR+OWJPXhFWpSvEY78rEruUeYDtONGVzkCcQjC6Pq0IQ3+k2aM5fcazGo4LWFN56yYazncPlcMDAituI6FQydN2ZiH3tWCSBrLNAoIBAGUg3EGmNNJ/geoYwzwsTjbUYjLpAucA2nVPDKgRnZuH/SMeUzkdbO2AljQFkZeoAkQvqS8ybgafEcYegOQMZvM3NNYtJ8m5kjafii0tD+MbDcpswqA0ZngueBaIkCirg0cz3eGZ7ehyHH1j4uzQZM1igdbSVEF8K1GcZvqGHvmZqxwQPYIGKPtRSGJSk95UhZEJJ+eKYpGLUV+D7y7/n6s7cogK/V4gjhSt+hKGDzJs8MsYCHZp7zjpKS9kiUVm8n9iXN7rn//uJmaO9/Mt2/CZKg+nCt+IbsQ8gXt1xjiP5TQBc4wtI5fIbmJbp7NV2i1DXq0QXveoGTsH4j01qkECggEBAOE5Mx8EM1hBJqtfiXTTta8NuKVS2JSRxYRcwGqZ5zagv4R2esxzEEwgHDeBZnuuBMoCIyv9jP512U5guR6UsqjZ2Tm2Zc5xLzONj/wka9X7x48FwufX7kochbbwacqKfp9I65nW74cE3F/ENt7hUKbXlCplx9vqrQeVNvdh0vozrrcF6NlMM7q5kgef2b8IVcs5S91ci7iKVyGWjr+A9T0j+n43TbBZUDXyGkPKCG8beS8uzSI4D+uI0s2qWu6pmnBpSS1UscrmVKBj4ielh18vKu4/lCfOIYqyA7Lj3IPqf6ZuJ9EnL+H6K+NC+VAYxbdeKK/ceczk16+H0JJ+4kQ=
     networks:
-      - authservice-deb
-      - ic-backend-deb
+      - auth-network
+      - realworld-external
+
+  setup:
+    image: elasticsearch:8.12.1
+    environment:
+      - ELASTIC_PASSWORD=123123123
+      - KIBANA_PASSWORD=123123123
+    container_name: setup
+    profiles: ['EnabledLogging']
+    command:
+      - bash
+      - -c
+      - |
+        echo "Waiting for Elasticsearch availability";
+        until curl -s http://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST -u "elastic:123123123" -H "Content-Type: application/json" http://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"123123123\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "All done!";
+    networks:
+      - auth-network
+
+  elasticsearch:
+    image: elasticsearch:8.12.1
+    container_name: elasticsearch
+    profiles: ['EnabledLogging']
+    healthcheck:
+     test:
+       [
+         "CMD-SHELL",
+         "curl -s http://elasticsearch:9200 >/dev/null || exit 1",
+       ]
+     interval: 10s
+     timeout: 10s
+     retries: 120
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=123123123
+      - xpack.security.http.ssl.enabled=false
+    networks:
+      - auth-network
+
+  kibana:
+    image: kibana:8.12.1
+    container_name: kibana
+    profiles: ['EnabledLogging']
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=123123123
+      - TELEMETRY_ENABLED=false
+    networks:
+      - auth-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: jaeger
+    profiles: ['EnabledLogging']
+    command: --collector.otlp.enabled=true
+    ports:
+      - 6831:6831/udp
+      - 6832:6832/udp 
+      - 5778:5778  
+      - 16686:16686    
+      - 4317:4317   
+      - 4318:4318    
+      - 14268:14268   
+      - 14250:14250   
+      - 14269:14269   
+      - 9411:9411     
+    healthcheck:
+      test: ["CMD", "curl", "-X", "GET", "localhost:14269"] 
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    networks:
+      - auth-network
 
 networks:
-  authservice-deb: {}
-  ic-backend-deb:
+  auth-network: {}
+  realworld-external:
+    name: realworld-external
     external: true
