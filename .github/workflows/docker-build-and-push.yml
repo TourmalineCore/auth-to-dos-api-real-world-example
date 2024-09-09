@@ -1,0 +1,44 @@
+name: build and push to dockerhub
+
+on:
+  push:
+    branches:
+      - master
+      
+  pull_request:
+
+env:
+  GITHUB_REGISTRY: ghcr.io
+
+jobs:
+  unit-tests:
+    name: Run unit tests
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Restore application dependencies
+        run: dotnet restore
+
+      - name: Build application
+        run: dotnet build
+
+      - name: Run unit tests
+        run: dotnet test
+        
+  build-image:
+    name: Build and push service image 
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    needs: unit-tests
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: Build and push image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+          docker build -t $GITHUB_REGISTRY/tourmalinecore/real-world/real-world-auth-api:latest -t $GITHUB_REGISTRY/tourmalinecore/real-world/real-world-auth-api:${{ github.sha }} -f ./Dockerfile .
+          docker push $GITHUB_REGISTRY/tourmalinecore/real-world/real-world-auth-api:latest
+          docker push $GITHUB_REGISTRY/tourmalinecore/real-world/real-world-auth-api:${{ github.sha }}

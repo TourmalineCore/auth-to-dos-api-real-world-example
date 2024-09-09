@@ -1,0 +1,43 @@
+# Git files
+**/.git
+**/.gitignore
+
+# Build results
+**/[Bb]in/
+**/[Oo]bj/
+
+# Visual Studio 2015 cache/options directory
+**/.vs/
+**/.vs
+**/.vscode
+**/*.*proj.user
+
+# Settings for local pgadmin
+**/.pgadmin4/
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# CI 
+WbAnalyticsApi/ci/
+**/.gitlab-ci.yml
+
+# Other
+**/.classpath
+**/.env
+**/.project
+**/.settings
+**/.toolstarget
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
+**/charts
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md
