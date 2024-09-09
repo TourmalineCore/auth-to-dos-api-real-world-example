@@ -1,0 +1,12 @@
+global:
+    postgresql:
+        auth:
+            postgresPassword: "{{ secrets.DbName }}"
+            username: "{{ secrets.postgresUsername }}"
+            password: "{{ secrets.postgresPassword }}"
+
+primary:
+    service:
+        type: NodePort
+        nodePorts:
+            postgresql: 30100
