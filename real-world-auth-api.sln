@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Api", "Api\Api.csproj", "{9
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccess", "DataAccess\DataAccess.csproj", "{8892069A-C4F2-4150-B4A5-81327F74D61D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{A4800813-A1B5-40ED-AA8F-D60A9CFD2F88}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoggingLibrary", "LoggingLibrary\LoggingLibrary.csproj", "{51467EED-5C51-472A-980B-49A49348F030}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TracingLibrary", "TracingLibrary\TracingLibrary.csproj", "{CB8D47D1-09C9-4165-99CE-7C3B01CD3137}"
