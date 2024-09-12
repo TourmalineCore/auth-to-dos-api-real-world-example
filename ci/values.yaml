@@ -8,7 +8,7 @@ image:
   debug: true
 
 containerPorts:
-  http: 80
+  http: 8080
   https: ""
 
 replicaCount: 1
@@ -38,12 +38,15 @@ service:
 
 ingress:
   enabled: true
-  path: /api/
+  hostname: "real-world.tourmalinecore.com"
+  path: /auth-api(/|$)(.*)
   annotations:
-    # to do not redirect from http to https
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    # redirect from http to https
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/rewrite-target: /api/auth/$2
   ingressClassName: "nginx"
-  tls: false
+  tls: true
 
 # no https
 tls: 
@@ -85,4 +88,3 @@ extraDeploy:
       {{- if .Values.extraConfigMapEnvVars }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.extraConfigMapEnvVars "context" $ ) | trim | nindent 6 }}
       {{- end }}
- 
